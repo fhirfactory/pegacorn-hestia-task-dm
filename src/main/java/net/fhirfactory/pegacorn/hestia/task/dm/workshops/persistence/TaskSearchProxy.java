@@ -29,13 +29,17 @@ import javax.enterprise.context.ApplicationScoped;
 
 import org.apache.camel.Header;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.hbase.CompareOperator;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.Table;
+import org.apache.hadoop.hbase.filter.DependentColumnFilter;
+import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.filter.FilterList;
+import org.apache.hadoop.hbase.filter.RegexStringComparator;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +60,8 @@ public class TaskSearchProxy extends TaskBaseProxy {
     		@Header("focus") String focus, @Header("limit") String limit) throws Throwable {
         getLogger().debug(".doSearch(): Entry");
         List<String> answerList = new ArrayList<>();
-
+        FilterList filters = new FilterList();
+        
 
         boolean locationExists = StringUtils.isNotEmpty(location);
         boolean codeExists = StringUtils.isNotEmpty(code);
@@ -67,15 +72,67 @@ public class TaskSearchProxy extends TaskBaseProxy {
         boolean focusExists = StringUtils.isNotEmpty(focus);
         boolean limitExists = StringUtils.isNotEmpty(limit);
 
-        //TODO Pattern to follow
-//        if(agentNameExists){
-//            // nothing to be done yet!
-//            getLogger().debug("..doSearch(): Exit, completed agentName search");
-//            return(answerList);
-//        }
-
-        getLogger().debug(".doSearch(): Exit, no search done, invalid parameter set");
+        
+        if(locationExists) {
+            filters.addFilter(getByLocation(location));
+        }
+        if(codeExists) {
+            filters.addFilter(getByCode(code));
+        }
+        if(partOfExists) {
+            filters.addFilter(getByPartOf(partOf));
+        }
+        if(basedOnExists) {
+            filters.addFilter(getByBasedOn(basedOn));
+        }
+        if(statusExists) {
+            filters.addFilter(getByStatus(status));
+        }
+        if(ownerExists) {
+            filters.addFilter(getByOwner(owner));
+        }
+        if(focusExists) {
+            filters.addFilter(getByFocus(focus));
+        }
+        //Search requires at least one filter
+        if(filters.size() > 0) {
+            if(limitExists) {
+                try {
+                int lmt = Integer.parseInt(limit);
+                answerList = getResults(filters, lmt, true);
+                }catch (NumberFormatException e) {
+                    LOG.warn(".doSearch(): Invalid limit, number expecteed.");
+                    return(answerList);
+                }
+            } else {
+                answerList = getResults(filters);
+            } 
+        }
+        LOG.debug(".doSearch(): Exit");
         return(answerList);
+    }
+    
+
+    public Filter getByLocation(String location) {
+        return new DependentColumnFilter(CF1, Q_LOCATION, true, CompareOperator.EQUAL, new RegexStringComparator("^" + prepareRegex(location)));
+    }
+    public Filter getByCode(String code) {
+        return new DependentColumnFilter(CF1, Q_CODE, true, CompareOperator.EQUAL, new RegexStringComparator("^" + prepareRegex(code)));
+    }
+    public Filter getByPartOf(String partOf) {
+        return new DependentColumnFilter(CF1, Q_PARTOF, true, CompareOperator.EQUAL, new RegexStringComparator("^" + prepareRegex(partOf)));
+    }
+    public Filter getByBasedOn(String basedOn) {
+        return new DependentColumnFilter(CF1, Q_BASEDON, true, CompareOperator.EQUAL, new RegexStringComparator("^" + prepareRegex(basedOn)));
+    }
+    public Filter getByStatus(String status) {
+        return new DependentColumnFilter(CF1, Q_STATUS, true, CompareOperator.EQUAL, new RegexStringComparator("^" + prepareRegex(status)));
+    }
+    public Filter getByOwner(String owner) {
+        return new DependentColumnFilter(CF1, Q_OWNER, true, CompareOperator.EQUAL, new RegexStringComparator("^" + prepareRegex(owner)));
+    }
+    public Filter getByFocus(String focus) {
+        return new DependentColumnFilter(CF1, Q_FOCUS, true, CompareOperator.EQUAL, new RegexStringComparator("^" + prepareRegex(focus)));
     }
 
 
