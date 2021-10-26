@@ -74,25 +74,25 @@ public class TaskSearchProxy extends TaskBaseProxy {
 
         
         if(locationExists) {
-            filters.addFilter(getByLocation(location));
+            filters.addFilter(getLocationFilter(location));
         }
         if(codeExists) {
-            filters.addFilter(getByCode(code));
+            filters.addFilter(getCodeFilter(code));
         }
         if(partOfExists) {
-            filters.addFilter(getByPartOf(partOf));
+            filters.addFilter(getPartOfFilter(partOf));
         }
         if(basedOnExists) {
-            filters.addFilter(getByBasedOn(basedOn));
+            filters.addFilter(getBasedOnFilter(basedOn));
         }
         if(statusExists) {
-            filters.addFilter(getByStatus(status));
+            filters.addFilter(getStatusFilter(status));
         }
         if(ownerExists) {
-            filters.addFilter(getByOwner(owner));
+            filters.addFilter(getOwnerFilter(owner));
         }
         if(focusExists) {
-            filters.addFilter(getByFocus(focus));
+            filters.addFilter(getFocusFilter(focus));
         }
         //Search requires at least one filter
         if(filters.size() > 0) {
@@ -113,25 +113,25 @@ public class TaskSearchProxy extends TaskBaseProxy {
     }
     
 
-    public Filter getByLocation(String location) {
+    public Filter getLocationFilter(String location) {
         return new DependentColumnFilter(CF1, Q_LOCATION, true, CompareOperator.EQUAL, new RegexStringComparator("^" + prepareRegex(location)));
     }
-    public Filter getByCode(String code) {
+    public Filter getCodeFilter(String code) {
         return new DependentColumnFilter(CF1, Q_CODE, true, CompareOperator.EQUAL, new RegexStringComparator("^" + prepareRegex(code)));
     }
-    public Filter getByPartOf(String partOf) {
+    public Filter getPartOfFilter(String partOf) {
         return new DependentColumnFilter(CF1, Q_PARTOF, true, CompareOperator.EQUAL, new RegexStringComparator("^" + prepareRegex(partOf)));
     }
-    public Filter getByBasedOn(String basedOn) {
+    public Filter getBasedOnFilter(String basedOn) {
         return new DependentColumnFilter(CF1, Q_BASEDON, true, CompareOperator.EQUAL, new RegexStringComparator("^" + prepareRegex(basedOn)));
     }
-    public Filter getByStatus(String status) {
+    public Filter getStatusFilter(String status) {
         return new DependentColumnFilter(CF1, Q_STATUS, true, CompareOperator.EQUAL, new RegexStringComparator("^" + prepareRegex(status)));
     }
-    public Filter getByOwner(String owner) {
+    public Filter getOwnerFilter(String owner) {
         return new DependentColumnFilter(CF1, Q_OWNER, true, CompareOperator.EQUAL, new RegexStringComparator("^" + prepareRegex(owner)));
     }
-    public Filter getByFocus(String focus) {
+    public Filter getFocusFilter(String focus) {
         return new DependentColumnFilter(CF1, Q_FOCUS, true, CompareOperator.EQUAL, new RegexStringComparator("^" + prepareRegex(focus)));
     }
 
