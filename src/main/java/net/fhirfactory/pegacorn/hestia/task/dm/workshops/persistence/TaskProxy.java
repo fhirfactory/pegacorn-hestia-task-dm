@@ -33,6 +33,7 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.hl7.fhir.r4.model.AuditEvent;
 import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Task;
 import org.slf4j.Logger;
@@ -44,7 +45,9 @@ import ca.uhn.fhir.rest.annotation.IdParam;
 import ca.uhn.fhir.rest.annotation.Read;
 import ca.uhn.fhir.rest.annotation.ResourceParam;
 import ca.uhn.fhir.rest.annotation.Update;
+import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
+import net.fhirfactory.pegacorn.components.transaction.model.TransactionMethodOutcome;
 import net.fhirfactory.pegacorn.hestia.task.dm.workshops.persistence.common.TaskBaseProxy;
 
 @ApplicationScoped
@@ -84,49 +87,49 @@ public class TaskProxy extends TaskBaseProxy {
     }
 
     @Create
-    public StoreTaskOutcomeEnum createTask(@ResourceParam Task theTask) {
+    public MethodOutcome createTask(@ResourceParam Task theTask) {
         LOG.debug(".createEvent(): Entry, theTask (Task) --> {}", theTask);
         try {
             return saveToDatabase(theTask);
         } catch (Exception e) {
             e.printStackTrace();
-            return StoreTaskOutcomeEnum.BAD;
         }
+        return new TransactionMethodOutcome();
+
     }
 
     @Update
-    public StoreTaskOutcomeEnum updateTask(@ResourceParam Task theTask) {
+    public MethodOutcome updateTask(@ResourceParam Task theTask) {
         LOG.debug(".updateEvent(): Entry, theTask (Task) --> {}", theTask);
         try {
             return saveToDatabase(theTask);
         } catch (Exception e) {
             e.printStackTrace();
-        }
-        return StoreTaskOutcomeEnum.BAD;
-
+        } 
+        return new TransactionMethodOutcome();
     }
 
     @Delete()
-    public StoreTaskOutcomeEnum deleteTask(@IdParam IdType resourceId) {
+    public MethodOutcome deleteTask(@IdParam IdType resourceId) {
         LOG.debug(".deleteTask(): Entry, resourceId (IdType) --> {}", resourceId);
         throw (new UnsupportedOperationException("deleteTask() is not supported"));
     }
     
 
-    protected StoreTaskOutcomeEnum saveToDatabase(Task task) {
+    protected MethodOutcome saveToDatabase(Task task) {
+        TransactionMethodOutcome outcome = new TransactionMethodOutcome();
+        //TODO make outcome reflective of what happens in the transaction
         try {
             Put row = processToPut(task);
             save(row);
+            outcome.setId(task.getIdElement());
         } catch (MasterNotRunningException e) {
             e.printStackTrace();
-            return StoreTaskOutcomeEnum.FAILED;
         } catch (ZooKeeperConnectionException e) {
             e.printStackTrace();
-            return StoreTaskOutcomeEnum.FAILED;
         } catch (IOException e) {
             e.printStackTrace();
-            return StoreTaskOutcomeEnum.BAD;
         }
-        return StoreTaskOutcomeEnum.GOOD;
+        return outcome;
     }
 }
